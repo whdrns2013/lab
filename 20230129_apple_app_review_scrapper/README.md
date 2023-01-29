@@ -40,12 +40,8 @@ file_name = f'scrap_apple_{app_name}_{country}_{scrap_date}.csv' # 저장할 파
 
 # 참고
 
-* 앱 코드는 앱스토어 주소창에서 확인 가능 (id 뒤의 숫자만)  
-![](/assets/images/20230129_001_001.png)
-{: .notice--info}
+* 앱 코드는 웹상 앱스토어 주소창에서 확인 가능 (id 뒤의 숫자만)  
 
 * 국가코드는 아래 페이지에서 확인 가능 (영문 두글자)  
-https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-{: .notice--info}
 
 <br><br>
