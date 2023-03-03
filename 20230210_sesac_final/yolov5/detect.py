@@ -52,22 +52,6 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
 
-###################################
-#####     로그 기록 코드 추가      #####
-###################################
-
-# 로그 기록을 위한 라이브러리 import
-import logging
-
-# 로깅 설정값 설정
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    handlers=[logging.StreamHandler()])
-
-
-
-
-
 
 @smart_inference_mode()
 def run(

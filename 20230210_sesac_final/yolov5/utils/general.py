@@ -878,6 +878,12 @@ def clip_segments(segments, shape):
         segments[:, 0] = segments[:, 0].clip(0, shape[1])  # x
         segments[:, 1] = segments[:, 1].clip(0, shape[0])  # y
 
+# 종혁 : 추가한 코드
+def clip_coordinates(coordinates, image_size):
+    """Clip bounding box coordinates to image size"""
+    coordinates[..., [0, 2]] = coordinates[..., [0, 2]].clamp(0, image_size[1])
+    coordinates[..., [1, 3]] = coordinates[..., [1, 3]].clamp(0, image_size[0])
+    return coordinates
 
 def non_max_suppression(
         prediction,
