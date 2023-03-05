@@ -1,13 +1,13 @@
--- MariaDB dump 10.19  Distrib 10.11.2-MariaDB, for osx10.18 (arm64)
+-- MySQL dump 10.14  Distrib 5.5.68-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: test1
+-- Host: team06-antifragile-db.cxuncqkdvk3h.us-east-1.rds.amazonaws.com    Database: antifragile
 -- ------------------------------------------------------
--- Server version	10.11.2-MariaDB
+-- Server version	10.6.11-MariaDB-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -31,7 +31,7 @@ CREATE TABLE `cam` (
   PRIMARY KEY (`cam_id`),
   KEY `user_id` (`user_uid`),
   CONSTRAINT `cam_ibfk_1` FOREIGN KEY (`user_uid`) REFERENCES `user` (`user_uid`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -55,7 +55,7 @@ CREATE TABLE `images` (
   `image_path` varchar(50) NOT NULL,
   `exp` varchar(10) NOT NULL,
   PRIMARY KEY (`image_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -89,10 +89,10 @@ CREATE TABLE `log` (
   KEY `user_uid` (`user_uid`),
   KEY `cam_id` (`cam_id`),
   KEY `object_id` (`object_id`),
-  CONSTRAINT `log_ibfk_1` FOREIGN KEY (`user_uid`) REFERENCES `user` (`user_uid`) ON UPDATE CASCADE,
+  CONSTRAINT `log_ibfk_1` FOREIGN KEY (`object_id`) REFERENCES `object` (`object_id`) ON UPDATE CASCADE,
   CONSTRAINT `log_ibfk_2` FOREIGN KEY (`cam_id`) REFERENCES `cam` (`cam_id`) ON UPDATE CASCADE,
-  CONSTRAINT `log_ibfk_3` FOREIGN KEY (`object_id`) REFERENCES `object` (`object_id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  CONSTRAINT `log_ibfk_3` FOREIGN KEY (`user_uid`) REFERENCES `cam` (`user_uid`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -115,7 +115,7 @@ CREATE TABLE `object` (
   `object_id` varchar(20) NOT NULL,
   `object_name` varchar(20) NOT NULL,
   PRIMARY KEY (`object_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -140,7 +140,7 @@ CREATE TABLE `user` (
   `user_id` varchar(20) NOT NULL,
   `user_pw` varchar(20) NOT NULL,
   PRIMARY KEY (`user_uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -161,4 +161,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-02-28 20:30:13
+-- Dump completed on 2023-03-04 18:04:49
