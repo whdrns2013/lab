@@ -33,10 +33,11 @@ import os
 import platform
 import sys
 from pathlib import Path
+import time # 종혁 : 추가
 
 import torch
 
-
+detecting = False # 종혁 : 추가
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

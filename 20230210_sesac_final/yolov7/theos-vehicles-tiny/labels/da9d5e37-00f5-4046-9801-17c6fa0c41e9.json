@@ -1,0 +1,128 @@
+[
+    {
+        "class_id": 5,
+        "x": 365,
+        "y": 460,
+        "width": 43.5,
+        "height": 71
+    },
+    {
+        "class_id": 5,
+        "x": 334,
+        "y": 475,
+        "width": 34,
+        "height": 50
+    },
+    {
+        "class_id": 5,
+        "x": 411,
+        "y": 476,
+        "width": 65.5,
+        "height": 60
+    },
+    {
+        "class_id": 5,
+        "x": 190,
+        "y": 455,
+        "width": 90,
+        "height": 82
+    },
+    {
+        "class_id": 5,
+        "x": 273,
+        "y": 462,
+        "width": 51.5,
+        "height": 57
+    },
+    {
+        "class_id": 5,
+        "x": 111,
+        "y": 456,
+        "width": 39,
+        "height": 37
+    },
+    {
+        "class_id": 5,
+        "x": 390,
+        "y": 472,
+        "width": 38.5,
+        "height": 61.5
+    },
+    {
+        "class_id": 5,
+        "x": 318,
+        "y": 471,
+        "width": 22.5,
+        "height": 51.5
+    },
+    {
+        "class_id": 5,
+        "x": 304,
+        "y": 462,
+        "width": 31.5,
+        "height": 62
+    },
+    {
+        "class_id": 5,
+        "x": 66,
+        "y": 452,
+        "width": 29,
+        "height": 33.5
+    },
+    {
+        "class_id": 5,
+        "x": 97,
+        "y": 458,
+        "width": 20.5,
+        "height": 33
+    },
+    {
+        "class_id": 5,
+        "x": 367,
+        "y": 453,
+        "width": 14.5,
+        "height": 23
+    },
+    {
+        "class_id": 5,
+        "x": 186,
+        "y": 460,
+        "width": 28,
+        "height": 42.5
+    },
+    {
+        "class_id": 5,
+        "x": 168,
+        "y": 463,
+        "width": 33,
+        "height": 40.5
+    },
+    {
+        "class_id": 5,
+        "x": 155,
+        "y": 460,
+        "width": 28,
+        "height": 40
+    },
+    {
+        "class_id": 5,
+        "x": 89,
+        "y": 456,
+        "width": 29,
+        "height": 33
+    },
+    {
+        "class_id": 5,
+        "x": 60,
+        "y": 458,
+        "width": 10.5,
+        "height": 24
+    },
+    {
+        "class_id": 5,
+        "x": 351,
+        "y": 476,
+        "width": 31,
+        "height": 53
+    }
+]
