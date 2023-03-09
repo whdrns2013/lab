@@ -35,6 +35,7 @@ import sys
 from pathlib import Path
 
 import torch
+import datetime # 종혁 : 타임스탬프용
 
 
 
@@ -65,8 +66,8 @@ def run(
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img=False,  # show results
-        save_txt=False,  # save results to *.txt
+        view_img=True,  # show results # 종혁 : 항시 기록
+        save_txt=True,  # save results to *.txt # 종혁 : 항시 기록
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
         nosave=False,  # do not save images/videos
@@ -84,6 +85,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
+        saving_img = False, # 종혁 : 각 프레임 이미지 저장 여부
     ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -97,6 +99,7 @@ def run(
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+    (save_dir / 'images' if saving_img else save_dir).mkdir(parents=True, exist_ok=True) # 종혁 추가 : 디렉토리 만들기
 
     # Load model
     device = select_device(device)
@@ -150,7 +153,9 @@ def run(
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt 원본 텍스트 저장 코드
+            txt_path = str(save_dir / 'labels')  # 종혁 : 텍스트 저장 경로 수정
+            img_path = str(save_dir / 'images')  # 종혁 : 이미지 저장 경로
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -169,8 +174,11 @@ def run(
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        with open(f'{txt_path}.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        now = datetime.datetime.now() # 종혁 추가 : 타임스탬프
+                        timestamp = now.strftime("%Y-%m-%d-%H-%M-%S") # 종혁 추가 : 타임스탬프
+                        with open(f'{txt_path}/{timestamp}.txt', 'a') as f:
+                            # f.write(('%g ' * len(line)).rstrip() % line + '\n') 원코드
+                            f.write((timestamp + s + '%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
@@ -194,6 +202,11 @@ def run(
                 if dataset.mode == 'image':
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
+                    if saving_img:
+                        now = datetime.datetime.now() # 종혁 추가 : 타임스탬프용
+                        timestamp = now.strftime("%Y-%m-%d-%H-%M-%S") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
+                        cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
+                        print('이미지 저장 : ', img_path + 'images/' + timestamp + '.png')
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
                         if isinstance(vid_writer[i], cv2.VideoWriter):
@@ -225,9 +238,9 @@ def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/aintifragile.yaml', help='(optional) dataset.yaml path') # 종혁 : 안티프레질로 기본 설정
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.6, help='confidence threshold') # 종혁 : 0.6로 상향
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -250,6 +263,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
+    parser.add_argument('--saving-img', action='store_true', help='saving img each frame') # 종혁 : 이미지 저장 옵션 추가
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
