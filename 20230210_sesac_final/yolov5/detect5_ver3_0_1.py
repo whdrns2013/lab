@@ -173,21 +173,22 @@ import pandas as pd # 종혁 : 데이터프레임 만들기
 import pymysql # 종혁 : RDS 연결
 import boto3 # 종혁 : S3 연결
 import threading # 종혁 : 병렬 처리 위한 라이브러리. 메인 스레드가 yolo를 실행할 동안 서브 스레드가 to_rds, to_s3를 실행
-from dotenv import load_dotenv # 종혁 : AWS 연결 암호화를 위한 환경변수 라이브러리
+from dotenv import load_dotenv, find_dotenv # 종혁 : AWS 연결 암호화를 위한 환경변수 라이브러리
 
 # preference : AWS 연결 방법
 # 두 가지 방법 중 하나만 진행하면 됩니다.
 # (1) 환경변수 방법
 # 안전한 AWS 연결을 위해 환경변수를 이용한 암호화를 진행했습니다. (+ gitignore)
 # 환경변수 방법을 이용하는 경우 별도의 세팅이 필요합니다. (카톡으로 직접 공유받은 경우, 별도 세팅 필요 없음. 단, 이 때 깃허브 업로드 금지)
-# load_dotenv([x for x in os.listdir(os.getcwd()) if x.endswith('.env')][0])
-# rds_host = os.environ['RDS_HOST']
-# rds_port = int(os.environ['RDS_PORT'])
-# rds_database = os.environ['RDS_DATABASE']
-# rds_username = os.environ['RDS_USERNAME']
-# rds_password = os.environ['RDS_PASSWORD']
-# s3_resource = os.environ['S3_RESOURCE']
-# s3_bucket_name = os.environ['S3_BUCKET_NAME']
+load_dotenv([x for x in os.listdir(os.getcwd()) if x.endswith('.env')][0])
+# --> find_dotenv() 와 동일
+rds_host = os.environ['RDS_HOST']
+rds_port = int(os.environ['RDS_PORT'])
+rds_database = os.environ['RDS_DATABASE']
+rds_username = os.environ['RDS_USERNAME']
+rds_password = os.environ['RDS_PASSWORD']
+s3_resource = os.environ['S3_RESOURCE']
+s3_bucket_name = os.environ['S3_BUCKET_NAME']
 # (2) 직접선언 방법
 # 직접선언할 경우 보안상 문제가 있을 수 있으므로 추천하지 않습니다.
 # 반드시 코드 운용 후 보안상 문제 있는 부분은 지우고 저장해주세요.
