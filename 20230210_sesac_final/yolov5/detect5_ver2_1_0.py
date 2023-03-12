@@ -26,6 +26,54 @@ Usage - formats:
                                  yolov5s.tflite             # TensorFlow Lite
                                  yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                                  yolov5s_paddle_model       # PaddlePaddle
+                                 
+                                 
+############################################################################
+##########################  detect.py 명세서  ################################
+############################################################################
+
+Event_type
+0 : 객체가 탐지되지 않는 상시 상태
+1 : 객체가 탐지됨
+2 : 객체가 사라짐
+
+
+저장 알고리즘(조건문)
+if 객체가 없다가 탐지되면
+    -> 이벤트 폴더 생성
+    -> event_type을 1로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 탐지될 경우
+    -> event_type을 1로 유지하고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 미만인 경우
+    -> event_type을 2로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 이상인 경우
+    -> event_type을 0으로 바꾸고 종료
+
+
+실행시 옵션
+--weights ./runs/best/best.pt
+--source 0
+--saving-img
+--save-txt
+--detecting-time 초
+--conf-thres 임계비율
+
+############################################################################
+############################### 업데이트노트 ##################################
+
+%% 성능개선
+# gif 만드는 메서드 추가
+# 이미지 저장 png -> jpg로 변경 : 용량 문제
+# log들 dataframe화 구현
+# rds로 파일 보내는 메서드 테스트 구현. 3버전에서 제대로 구현할 예정.
+
+%% 해결할 사항
+# RDS로 dataframe을 보내는 메서드 구현했으나, 속도가 느린 문제 발생 -> subprocess로 해결하면서 ver3으로 업그레이드할 예정
+# gif 만드는 메서드 -> 하지만 만드는데 시간이 꽤 걸리는 문제 발생. (20초짜리 영상 -> 20초 정도 걸림)
+
 """
 
 import argparse
@@ -36,7 +84,9 @@ from pathlib import Path
 
 import torch
 import datetime # 종혁 : 타임스탬프용
-
+import imageio.v2 as imageio # 종혁 : gif 만들기
+import pandas as pd # 종혁 : 데이터프레임 만들기
+import pymysql # 종혁 : 파이썬 - sql 연결
 
 
 FILE = Path(__file__).resolve()
@@ -53,7 +103,7 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
 
-
+# 이미지와 로그 저장하는 메서드 지정
 def save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
                             save_img, save_crop, view_img, hide_labels, hide_conf, names,
                             annotator, imc, save_dir, p, windows, img_path, saving_img):
@@ -91,6 +141,7 @@ def save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_p
         save_img_method(now, im0, img_path)
 
 
+# 웹캠 등으로 streaming 되는 자료에 대한 처리 메서드
 def stream_results(annotator, view_img, p, windows):        
     im0 = annotator.result()
     if view_img:
@@ -102,9 +153,95 @@ def stream_results(annotator, view_img, p, windows):
         cv2.waitKey(1)  # 1 millisecond
 
 
+# 이미지 저장 메서드
 def save_img_method(now, im0, img_path):
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
-    cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
+    cv2.imwrite(img_path + '/' + timestamp + '.jpg', im0) # 종혁 : 이미지 저장
+
+
+# gif 만들기
+def make_gif(path, event_name, duration):
+    # path : 이벤트 폴더
+    img_list = os.listdir(path)
+    img_list = [path + '/' + x for x in img_list]
+    images = []
+    for img in img_list:
+        images.append(imageio.imread(img))
+        
+    imageio.mimsave(path + event_name + '.gif', images, 'GIF', duration = duration)
+    # duration : 프레임 간 전환 속도. 초 단위
+
+
+# 로그 데이터프레임 만들기 : 나중에는 make_log_and_image 메서드에 내장해야 함.
+def make_log_dataframe(path, event_name):
+    log_list = os.listdir(path)
+    log_list = [path + '/' + log for log in log_list]
+    log_list.sort()
+    result = []
+    
+    origin_col_name = ['event_name', 'detect_date', 'detect_time', 'img_size',
+                       'object1_num', 'object1_name',
+                       'object2_num', 'object2_name',
+                       'object3_num', 'object3_name',]
+    
+    censored_col_name = ['event_name', 'detect_date', 'detect_time',
+                         'object1_name', 'object1_num',
+                         'object2_name', 'object2_num',
+                         'object3_name', 'object3_num',]
+    
+    for log in log_list:
+        f = open(log, 'r')
+        lines = f.readlines()
+        
+        for line in lines:
+            line = line.replace('\n', '').replace(',','').split(' ')
+            line.insert(0, event_name)
+            del line[len(line) - 1]
+            
+            while len(line) < len(origin_col_name):
+                line.append('')
+            
+            result.append(line)
+            
+    log_dataframe = pd.DataFrame(result, columns = origin_col_name)
+    log_dataframe = log_dataframe[censored_col_name]
+    print('log 를 DataFrame 으로 변환하였습니다.')
+    
+    return log_dataframe
+
+
+# 로그 정보 RDS로 넘기기
+def to_rds(df, host, port, username, database, password):
+    
+    conn = pymysql.connect(host = host, user = username, port = port,
+                           database = database, password = password)
+    
+    cursor = conn.cursor()
+    
+    sql = 'INSERT INTO test VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+    
+    for i in range(len(df)):
+        event_name = df.iloc[i]['event_name']
+        detect_date = df.iloc[i]['detect_date']
+        detect_time = df.iloc[i]['detect_time']
+        object1_name = df.iloc[i]['object1_name']
+        object1_num = df.iloc[i]['object1_num']
+        object2_name = df.iloc[i]['object2_name']
+        object2_num = df.iloc[i]['object2_num']
+        object3_name = df.iloc[i]['object3_name']
+        object3_num = df.iloc[i]['object3_num']
+        cursor.execute(sql,
+                   (event_name, detect_date, detect_time,
+                    object1_name, object1_num,
+                    object2_name, object2_num,
+                    object3_name, object3_num))
+    
+    print('to_rds 전송이 완료됐습니다.')
+    
+    conn.commit()
+    conn.close()
+    
+    print('rds 연결을 종료합니다.')
 
 
 @smart_inference_mode()
@@ -150,25 +287,11 @@ def run(
     if is_url and is_file:
         source = check_file(source)  # download
 
-    # Directories
-    ############### 종혁 : 디렉토리 생성 ###############
-    ###############################################
+    # 저장 경로 선언
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # 기본 디렉토리 increment run
     
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-    # (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-    # (save_dir / 'images' if saving_img else save_dir).mkdir(parents=True, exist_ok=True) # 종혁 추가 : 디렉토리 만들기
-    
-    ###############################################
-    ###############################################
-    
-    ############### 종혁 : 초기 이벤트 설정값 ###############
-    ###################################################
-    
-    event_type = 0 # 상시상태
-    
-    ###################################################
-    ###################################################
-    
+    # 이벤트 타입 선언
+    event_type = 0 # 이벤트 타입 : 0 상시상태(객체 미탐지) 1 객체 탐지됨 2 객체 사라짐
     
     # Load model
     device = select_device(device)
@@ -220,73 +343,89 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
-            ############### 종혁 : 이벤트 디렉토리 생성 ###############
-            #####################################################
-            
+
+            # 세이브 경로 지정 (p : 자동 increment)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
-            # txt_path = str(save_dir / 'labels')  # 종혁 : 텍스트 저장 경로 수정
-            img_path = str(save_dir / 'images')  # 종혁 : 이미지 저장 경로
             
-            #####################################################
-            #####################################################
             
+            # 로그값 및 이미지값 기본 변수
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             
             
-            ############### 종혁 : 로그 데이터 저장 ###############
-            ##################################################
-            
+            # 타임스탬프 timestamp
             now = datetime.datetime.now()
             time_stamp = now.timestamp()
             
-            try:
-                if (len(det) == 0)&(event_type == 0): # detect 감지 대상이 없는 상시 상태
-                    pass
-                
-                elif len(det)&(event_type == 0): # 처음으로 감지 대상이 잡혔을 때 -> 가장 마지막으로 가는 게 자원효율 상 좋을 것
-                    event_type = 1 # 객체 감지됨
-                    event_name = now.strftime("%Y-%m-%d %H-%M-%S") # 이벤트명 : 최초탐지시간
-                    time_stamp_old = time_stamp # 이전 감지시간 기록
-                    txt_path = str(save_dir / event_name / 'logs') # 로그 저장 경로 설정
-                    img_path = str(save_dir / event_name / 'images') # 이미지 저장 경로 설정
-                    (os.makedirs(txt_path) if save_txt else save_dir.mkdir(parents = True, exist_ok = True)) # 이벤트 폴더 및 로그 폴더 생성
-                    (os.makedirs(img_path) if saving_img else save_dir.mkdir(parents = True, exist_ok = True))  # 이미지 폴더 생성
-                    
-                    save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                            save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                            annotator, imc, save_dir, p, windows, img_path, saving_img)
+            # 객체 탐지시 로그, 이미지 저장 메서드 실행 부
+            if (save_txt)|(saving_img): # 로그나 텍스트를 저장하기로 했다면
+                try:
+                    if (len(det) == 0)&(event_type == 0): # detect 감지 대상이 없는 상시 상태
+                        print(f'event_type : {event_type}')
+                        pass
                         
+                    elif len(det)&(event_type == 0): # 처음으로 감지 대상이 잡혔을 때 -> refactoring시 가장 마지막으로 가는 게 자원효율 상 좋을 것
+                        event_type = 1 # 객체 감지됨
+                        event_name = now.strftime("%Y-%m-%d %H-%M-%S") # 이벤트명 : 최초탐지시간
+                        time_stamp_old = time_stamp # 이전 감지시간 기록
+                        txt_path = str(save_dir / event_name / 'logs') # 로그 저장 경로 설정
+                        img_path = str(save_dir / event_name / 'images') # 이미지 저장 경로 설정
+                        (os.makedirs(txt_path) if save_txt else save_dir.mkdir(parents = True, exist_ok = True)) # 이벤트 폴더 및 로그 폴더 생성
+                        (os.makedirs(img_path) if saving_img else save_dir.mkdir(parents = True, exist_ok = True))  # 이미지 폴더 생성
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
+                            
+                        
+                    elif len(det)&(event_type >= 1): # 이어서 객체가 계속 탐지될 때
+                        event_type = 1 # 객체 탐지됨
+                        time_stamp_old = time_stamp
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
+                        
+                        
+                    elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) < detecting_time): # 객체가 사라졌고, 사라진지 x초 미만
+                        event_type = 2 # 객체 사라짐
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
                     
-                elif len(det)&(event_type == 1): # 이어서 객체가 계속 탐지될 때
-                    event_type = 1 # 객체 탐지됨
-                    time_stamp_old = time_stamp
-                    
-                    save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                            save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                            annotator, imc, save_dir, p, windows, img_path, saving_img)
-                    
-                elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) < detecting_time): # 객체가 사라졌고, 사라진지 10초 미만
-                    event_type = 2 # 객체 사라짐
-                    
-                    save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                            save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                            annotator, imc, save_dir, p, windows, img_path, saving_img)
-                    
-                elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) >= detecting_time): # 객체가 사라졌고, 사라진지 10초 이상
-                    event_type = 0 # 상시상태로 전환
+                        
+                    elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) >= detecting_time): # 객체가 사라졌고, 사라진지 x초 이상
+                        event_type = 0 # 상시상태로 전환
+                        print(f'event_type : {event_type}')
+                        
+                        # To Do. 모든 로그값을 불러와 DataFrame 형태로 convert 하여 저장
+                        log_dataframe = make_log_dataframe(txt_path, event_name)
+                        print(log_dataframe)
+                        log_dataframe.to_csv(txt_path + '/logs.csv')
+                        
+                        # To Do. 이미지를 gif로 convert 하여 저장
+                        # make_gif(img_path, event_name, 0.5) # 만들었지만 봉인
+                        
+                        # To Do. 로그값을 RDS에 업로드
+                        to_rds(log_dataframe, "RDS endpoint",
+                               3306, 'RDS user id', 'database name', 'RDS user password')
+                        
+                        # 이미지를 S3에 업로드
+                        
+                        # execfile(method_alarm())
 
-            except:
-                pass
+                except:
+                    pass
             
-            ##################################################
-            ##################################################
-
             # Stream results
-            stream_results(annotator, view_img, p, windows)
+            # stream_results(annotator, view_img, p, windows)
             
             
             # Save results (image with detections)

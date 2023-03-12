@@ -26,6 +26,46 @@ Usage - formats:
                                  yolov5s.tflite             # TensorFlow Lite
                                  yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                                  yolov5s_paddle_model       # PaddlePaddle
+ 
+                                 
+############################################################################
+##########################  detect.py 명세서  ################################
+############################################################################
+
+Event_type
+0 : 객체가 탐지되지 않는 상시 상태
+1 : 객체가 탐지됨
+2 : 객체가 사라짐
+
+
+저장 알고리즘(조건문)
+if 객체가 없다가 탐지되면
+    -> 이벤트 폴더 생성
+    -> event_type을 1로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 탐지될 경우
+    -> event_type을 1로 유지하고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 미만인 경우
+    -> event_type을 2로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 이상인 경우
+    -> event_type을 0으로 바꾸고 종료
+
+
+############################################################################
+############################### 업데이트노트 ##################################
+                   
+%% 성능 개선
+- 로그 및 이미지 저장 프로세스 명시
+- 기존의 폴더 생성, 결과 저장 프로세스를 현재 프로젝트에 알맞게 조정
+
+%% To Do
+- 코드 리팩토링
+- 저장 조건 알고리즘 효율화
+(1) try except 보다는 if문이 리소스 소모가 적을 것으로 판단됨
+(2) if문 사이에서도 순서 재배치를 통한 리소스 소모 최소화를 노릴 수 있음
+
 """
 
 import argparse
@@ -66,11 +106,6 @@ def save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
         n = (det[:, 5] == c).sum()  # detections per class
         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
         
-    print(f'det : {det}')
-    print(f'c : {c}')
-    print(f'n : {n}')
-    print(f's : {s}')
-        
     # Write results
     for *xyxy, conf, cls in reversed(det):    
         if save_txt:  # Write to file
@@ -86,6 +121,22 @@ def save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
             annotator.box_label(xyxy, label, color=colors(c, True))
         if save_crop:
             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+
+
+def stream_results(annotator, view_img, p, windows):        
+    im0 = annotator.result()
+    if view_img:
+        if platform.system() == 'Linux' and p not in windows:
+            windows.append(p)
+            cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+            cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
+        cv2.imshow(str(p), im0)
+        cv2.waitKey(1)  # 1 millisecond
+
+
+def save_img_method(now, im0, img_path):
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
+    cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
 
 
 @smart_inference_mode()
@@ -136,7 +187,7 @@ def run(
     
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     # (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-    (save_dir / 'images' if saving_img else save_dir).mkdir(parents=True, exist_ok=True) # 종혁 추가 : 디렉토리 만들기
+    # (save_dir / 'images' if saving_img else save_dir).mkdir(parents=True, exist_ok=True) # 종혁 추가 : 디렉토리 만들기
     
     ###############################################
     ###############################################
@@ -228,29 +279,48 @@ def run(
                     pass
                 
                 elif len(det)&(event_type == 0): # 처음으로 감지 대상이 잡혔을 때 -> 가장 마지막으로 가는 게 자원효율 상 좋을 것
-
                     event_type = 1 # 객체 감지됨
                     event_name = now.strftime("%Y-%m-%d %H-%M-%S") # 이벤트명 : 최초탐지시간
                     time_stamp_old = time_stamp # 이전 감지시간 기록
-                    txt_path = str(save_dir / event_name / 'logs') # 저장 경로 설정
-                    os.makedirs(txt_path) # 이벤트 폴더 및 로그 폴더 생성
+                    txt_path = str(save_dir / event_name / 'logs') # 로그 저장 경로 설정
+                    img_path = str(save_dir / event_name / 'images') # 이미지 저장 경로 설정
+                    (os.makedirs(txt_path) if save_txt else save_dir.mkdir(parents = True, exist_ok = True)) # 이벤트 폴더 및 로그 폴더 생성
+                    (os.makedirs(img_path) if saving_img else save_dir.mkdir(parents = True, exist_ok = True))  # 이미지 폴더 생성
                     
-                    save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                    save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                    annotator, imc, save_dir, p) # 로그 저장
+                    if save_txt:
+                        save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                        save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                        annotator, imc, save_dir, p) # 로그 저장
+                    
+                    if saving_img: # 종혁 추가 : 이미지 세이브할 경우
+                        stream_results(annotator, view_img, p, windows) # 이미지 변환
+                        save_img_method(now, im0, img_path) # 이미지 저장
+                        
                     
                 elif len(det)&(event_type == 1): # 이어서 객체가 계속 탐지될 때
                     event_type = 1 # 객체 탐지됨
                     time_stamp_old = time_stamp
-                    save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                    save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                    annotator, imc, save_dir, p) # 로그 저장
+                    
+                    if save_txt:
+                        save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                        save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                        annotator, imc, save_dir, p) # 로그 저장
+                    
+                    if saving_img: # 종혁 추가 : 이미지 세이브할 경우
+                        stream_results(annotator, view_img, p, windows) # 이미지 변환
+                        save_img_method(now, im0, img_path) # 이미지 저장
                     
                 elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) < 10): # 객체가 사라졌고, 사라진지 10초 미만
                     event_type = 2 # 객체 사라짐
-                    save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
-                                    save_img, save_crop, view_img, hide_labels, hide_conf, names,
-                                    annotator, imc, save_dir, p) # 로그 저장
+                    
+                    if save_txt:
+                        save_log_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                        save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                        annotator, imc, save_dir, p) # 로그 저장
+                    
+                    if saving_img: # 종혁 추가 : 이미지 세이브할 경우
+                        stream_results(annotator, view_img, p, windows) # 이미지 변환
+                        save_img_method(now, im0, img_path) # 이미지 저장
                     
                 elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) >= 10): # 객체가 사라졌고, 사라진지 10초 이상
                     event_type = 0 # 상시상태로 전환
@@ -262,14 +332,11 @@ def run(
             ##################################################
 
             # Stream results
-            im0 = annotator.result()
-            if view_img:
-                if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
-                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
+            stream_results(annotator, view_img, p, windows)
+            
+            
+                    
+            
 
             # Save results (image with detections)
             ############### 종혁 : 이미지 데이터 저장 ###############
@@ -283,10 +350,6 @@ def run(
                             cv2.imwrite(save_path, im0)
                         else:  # 'video' or 'stream'
                             for *xyxy, conf, cls in reversed(det):
-                                now = datetime.datetime.now() # 종혁 추가 : 타임스탬프용
-                                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
-                                if saving_img: # 종혁 추가 : 이미지 세이브할 경우
-                                    cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
                                 if vid_path[i] != save_path:  # new video
                                     vid_path[i] = save_path
                                     if isinstance(vid_writer[i], cv2.VideoWriter):

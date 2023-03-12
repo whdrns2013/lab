@@ -26,6 +26,52 @@ Usage - formats:
                                  yolov5s.tflite             # TensorFlow Lite
                                  yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
                                  yolov5s_paddle_model       # PaddlePaddle
+                                 
+                                 
+############################################################################
+##########################  detect.py 명세서  ################################
+############################################################################
+
+Event_type
+0 : 객체가 탐지되지 않는 상시 상태
+1 : 객체가 탐지됨
+2 : 객체가 사라짐
+
+
+저장 알고리즘(조건문)
+if 객체가 없다가 탐지되면
+    -> 이벤트 폴더 생성
+    -> event_type을 1로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 탐지될 경우
+    -> event_type을 1로 유지하고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 미만인 경우
+    -> event_type을 2로 바꾸고
+    -> 로그 및 이미지 저장
+elif 객체가 사라졌고, 사라진지 10초 이상인 경우
+    -> event_type을 0으로 바꾸고 종료
+
+
+실행시 옵션
+--weights ./runs/best/best.pt
+--source 0
+--saving-img
+--save-txt
+--detecting-time 초
+--conf-thres 임계비율
+
+############################################################################
+############################### 업데이트노트 ##################################
+
+%% 성능개선 : 이미지 및 로그 저장
+- 이미지 저장 혹은 로그 저장 옵션을 켤 경우에만 저장 알고리즘이 실행되게끔 변경
+-> 자원 절약, 코드 실행 속도 증가
+
+%% To Do
+
+
+
 """
 
 import argparse
@@ -52,6 +98,61 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
+
+# 이미지와 로그 저장하는 메서드 지정
+def save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                            save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                            annotator, imc, save_dir, p, windows, img_path, saving_img):
+    
+    if save_txt:
+        # Rescale boxes from img_size to im0 size
+        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+
+        # Print results
+        for c in det[:, 5].unique():
+            n = (det[:, 5] == c).sum()  # detections per class
+            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+            
+        # Write results
+        for *xyxy, conf, cls in reversed(det):    
+            if save_txt:  # Write to file
+                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프
+                with open(f'{txt_path}/{timestamp}.txt', 'a') as f:
+                    f.write(timestamp + s + '\n')
+
+            if save_img or save_crop or view_img:  # Add bbox to image
+                c = int(cls)  # integer class
+                label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                annotator.box_label(xyxy, label, color=colors(c, True))
+            if save_crop:
+                save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+    
+    # Stream_results
+    stream_results(annotator, view_img, p, windows)
+    
+    # Save_image
+    if saving_img:
+        save_img_method(now, im0, img_path)
+
+
+# 웹캠 등으로 streaming 되는 자료에 대한 처리 메서드
+def stream_results(annotator, view_img, p, windows):        
+    im0 = annotator.result()
+    if view_img:
+        if platform.system() == 'Linux' and p not in windows:
+            windows.append(p)
+            cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+            cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
+        cv2.imshow(str(p), im0)
+        cv2.waitKey(1)  # 1 millisecond
+
+
+# 이미지 저장 메서드
+def save_img_method(now, im0, img_path):
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
+    cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
 
 
 @smart_inference_mode()
@@ -86,6 +187,7 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
         saving_img = False, # 종혁 : 각 프레임 이미지 저장 여부
+        detecting_time = 10,
     ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -96,11 +198,12 @@ def run(
     if is_url and is_file:
         source = check_file(source)  # download
 
-    # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-    (save_dir / 'images' if saving_img else save_dir).mkdir(parents=True, exist_ok=True) # 종혁 추가 : 디렉토리 만들기
-
+    # 저장 경로 선언
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # 기본 디렉토리 increment run
+    
+    # 이벤트 타입 선언
+    event_type = 0 # 이벤트 타입 : 0 상시상태(객체 미탐지) 1 객체 탐지됨 2 객체 사라짐
+    
     # Load model
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
@@ -151,106 +254,109 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
+
+            # 세이브 경로 지정 (p : 자동 increment)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
-            # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt 원본 텍스트 저장 코드
-            txt_path = str(save_dir / 'labels')  # 종혁 : 텍스트 저장 경로 수정
-            img_path = str(save_dir / 'images')  # 종혁 : 이미지 저장 경로
+            
+            
+            # 로그값 및 이미지값 기본 변수
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
-            try: # detet 안될 경우 대비하여 try - except
-                if len(det):
-                    temp = 1 # 종혁 : 구분자 위한 값 지정
+            
+            
+            # 타임스탬프 timestamp
+            now = datetime.datetime.now()
+            time_stamp = now.timestamp()
+            
+            # 객체 탐지시 로그, 이미지 저장 메서드 실행 부
+            if (save_txt)|(saving_img): # 로그나 텍스트를 저장하기로 했다면
+                try:
+                    if (len(det) == 0)&(event_type == 0): # detect 감지 대상이 없는 상시 상태
+                        print(f'event_type : {event_type}')
+                        pass
+                        
+                    elif len(det)&(event_type == 0): # 처음으로 감지 대상이 잡혔을 때 -> refactoring시 가장 마지막으로 가는 게 자원효율 상 좋을 것
+                        event_type = 1 # 객체 감지됨
+                        event_name = now.strftime("%Y-%m-%d %H-%M-%S") # 이벤트명 : 최초탐지시간
+                        time_stamp_old = time_stamp # 이전 감지시간 기록
+                        txt_path = str(save_dir / event_name / 'logs') # 로그 저장 경로 설정
+                        img_path = str(save_dir / event_name / 'images') # 이미지 저장 경로 설정
+                        (os.makedirs(txt_path) if save_txt else save_dir.mkdir(parents = True, exist_ok = True)) # 이벤트 폴더 및 로그 폴더 생성
+                        (os.makedirs(img_path) if saving_img else save_dir.mkdir(parents = True, exist_ok = True))  # 이미지 폴더 생성
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
+                            
+                        
+                    elif len(det)&(event_type >= 1): # 이어서 객체가 계속 탐지될 때
+                        event_type = 1 # 객체 탐지됨
+                        time_stamp_old = time_stamp
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
+                        
+                        
+                    elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) < detecting_time): # 객체가 사라졌고, 사라진지 10초 미만
+                        event_type = 2 # 객체 사라짐
+                        
+                        save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_path,
+                                                save_img, save_crop, view_img, hide_labels, hide_conf, names,
+                                                annotator, imc, save_dir, p, windows, img_path, saving_img)
+                        print(f'event_type : {event_type}')
                     
-                    # Rescale boxes from img_size to im0 size
-                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                        
+                    elif (len(det) != 1)&(event_type >= 1)&((time_stamp - time_stamp_old) >= detecting_time): # 객체가 사라졌고, 사라진지 10초 이상
+                        event_type = 0 # 상시상태로 전환
+                        print(f'event_type : {event_type}')
 
-                    # Print results
-                    for c in det[:, 5].unique():
-                        n = (det[:, 5] == c).sum()  # detections per class
-                        s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                    now = datetime.datetime.now() # 종혁 추가 : 타임스탬프
-                    ts = now.timestamp()
-                    # Write results
-                    for *xyxy, conf, cls in reversed(det):    
-                        if conf >= conf_thres: # 종혁 : 객체가 탐지될 때 
-                            if save_txt:  # Write to file
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                                line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프
-                                ts_old = ts
-                                with open(f'{txt_path}/{timestamp}.txt', 'a') as f:
-                                    # f.write(('%g ' * len(line)).rstrip() % line + '\n') # 종혁 : 원코드
-                                    # f.write((timestamp + s + '%g ' * len(line)).rstrip() % line + '\n') # 종혁 : 첫 번째 수정 코드
-                                    f.write(timestamp + s + '\n')
-
-                        if save_img or save_crop or view_img:  # Add bbox to image
-                            c = int(cls)  # integer class
-                            label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                            annotator.box_label(xyxy, label, color=colors(c, True))
-                        if save_crop:
-                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-                elif (temp == 1): # 종혁 추가 : 객체 감지 안될 때 한 번만 저장 (3초 이상)
-                    now = datetime.datetime.now() # 종혁 추가 : 타임스탬프
-                    ts = now.timestamp()
-                    if save_txt:  # Write to file
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                                line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프
-                                ts_old = ts
-                                with open(f'{txt_path}/{timestamp}.txt', 'a') as f:
-                                    # f.write(('%g ' * len(line)).rstrip() % line + '\n') # 종혁 : 원코드
-                                    # f.write((timestamp + s + '%g ' * len(line)).rstrip() % line + '\n') # 종혁 : 첫 번째 수정 코드
-                                    f.write('detect:none' + '\n')
-                    temp = 0
-            except:
-                pass
-
+                except:
+                    pass
+            
             # Stream results
-            im0 = annotator.result()
-            if view_img:
-                if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
-                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
-
+            # stream_results(annotator, view_img, p, windows)
+            
+            
             # Save results (image with detections)
-            try:
-                if len(det):
-                    temp = 1 # 종혁 : 저장할지 말지 여부
-                    if save_img:
-                        if dataset.mode == 'image':
-                            cv2.imwrite(save_path, im0)
-                        else:  # 'video' or 'stream'
-                            for *xyxy, conf, cls in reversed(det):
-                                now = datetime.datetime.now() # 종혁 추가 : 타임스탬프용
-                                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프용 / 타임스탬프 단위가 1초여서 1초 단위로 저장됨
-                                if conf >= conf_thres: # 종혁 : 객체가 탐지될 때
-                                    if saving_img: # 종혁 추가 : 이미지 세이브할 경우
-                                        cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
-                                    if vid_path[i] != save_path:  # new video
-                                        vid_path[i] = save_path
-                                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                                            vid_writer[i].release()  # release previous video writer
-                                        if vid_cap:  # video
-                                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                                        else:  # stream
-                                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                                    vid_writer[i].write(im0)
-                elif temp == 1:
-                    if saving_img: # 종혁 추가 : 이미지 세이브할 경우
-                        cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
-                    temp = 0
-            except:
-                pass
+            ############### 종혁 : 영상 저장 ###############
+            ###################################################
+            
+            # try:
+            #     if len(det): # 탐지 객체가 1개 이상일 때
+            #         temp = 1 # 종혁 : 저장할지 말지 여부
+            #         if save_img:
+            #             if dataset.mode == 'image':
+            #                 cv2.imwrite(save_path, im0)
+            #             else:  # 'video' or 'stream'
+            #                 for *xyxy, conf, cls in reversed(det):
+            #                     if vid_path[i] != save_path:  # new video
+            #                         vid_path[i] = save_path
+            #                         if isinstance(vid_writer[i], cv2.VideoWriter):
+            #                             vid_writer[i].release()  # release previous video writer
+            #                         if vid_cap:  # video
+            #                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
+            #                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            #                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            #                         else:  # stream
+            #                             fps, w, h = 30, im0.shape[1], im0.shape[0]
+            #                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+            #                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+            #                     vid_writer[i].write(im0)
+            #     elif temp == 1:
+            #         if saving_img: # 종혁 추가 : 이미지 세이브할 경우
+            #             cv2.imwrite(img_path + '/' + timestamp + '.png', im0) # 종혁 : 이미지 저장
+            #         temp = 0
+            # except:
+            #     pass
+            
+            ###################################################
+            ###################################################
                 
                 
                             
@@ -298,6 +404,7 @@ def parse_opt():
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
     parser.add_argument('--saving-img', action='store_true', help='saving img each frame') # 종혁 : 이미지 저장 옵션 추가
+    parser.add_argument('--detecting-time', type=int, default=10, help='undetected time limit')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))

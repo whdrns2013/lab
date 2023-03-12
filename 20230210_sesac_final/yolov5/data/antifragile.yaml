@@ -17,3 +17,4 @@ test:  # test images (optional)
 # Classes
 names:
   0: 멧돼지
+  1: 고라니

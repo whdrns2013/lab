@@ -49,3 +49,9 @@ wheel>=0.38.0 # Snyk vulnerability fix
 # pycocotools>=2.0.6  # COCO mAP
 # roboflow
 # ultralytics  # HUB https://hub.ultralytics.com
+
+# Others ----------------------------------------------------------------------
+pymysql>=1.0.2
+imageio>=2.26.0
+boto3>=1.26.84
+python-dotenv>=0.21.1
