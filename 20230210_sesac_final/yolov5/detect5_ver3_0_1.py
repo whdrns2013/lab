@@ -181,7 +181,7 @@ from dotenv import load_dotenv, find_dotenv # 종혁 : AWS 연결 암호화를 �
 # 안전한 AWS 연결을 위해 환경변수를 이용한 암호화를 진행했습니다. (+ gitignore)
 # 환경변수 방법을 이용하는 경우 별도의 세팅이 필요합니다. (카톡으로 직접 공유받은 경우, 별도 세팅 필요 없음. 단, 이 때 깃허브 업로드 금지)
 load_dotenv([x for x in os.listdir(os.getcwd()) if x.endswith('.env')][0])
-# --> find_dotenv() 와 동일
+# --> env_file = find_dotenv() 와 동일
 rds_host = os.environ['RDS_HOST']
 rds_port = int(os.environ['RDS_PORT'])
 rds_database = os.environ['RDS_DATABASE']
