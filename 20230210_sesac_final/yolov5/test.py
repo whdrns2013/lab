@@ -1,3 +1,5 @@
-import playsound
+import pygame
 
-playsound.playsound('./beep.wav')
+pygame.init()
+pygame.mixer.music.load('./beep.wav')
+pygame.mixer.music.play()
