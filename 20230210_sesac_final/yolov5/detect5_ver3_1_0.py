@@ -144,16 +144,16 @@ ver3.0.1 : AWS 연결 보안 강화 - env 이용
 ############################################################################
 ############################### 업데이트노트 ##################################
 
-%% detect5_ver3_0_1.py 주요 사항
-- 객체 탐지될 경우 경보 소리 재생
+%% detect5_ver3_1_0.py 주요 사항
+- 객체 탐지될 경우 경보 소리 재생 (멀티스레드, beep 소리)
 
 %% 성능개선
 
 %% To Do
 - ver3.1.1 : 보안 이슈로 인한 불편사항 최소화 : 보안 통과하지 않더라도 최소한의 기능은 이용 가능하게, 보안사항 입력 간편하게.
-- ver3.2.0 : log 및 이미지에 user-uid, cam-name 부여를 통해 실제 서비스처럼 꾸미기
-- ver3.2.1 : 로그값 데이터프레임화 -> RDS 전송을 묶어 다른 스레드에서 처리하게끔 효율화
-- ver3.3.0 : 퇴치부 알람 객체에 따라 다른 소리가 재생되도록 구현
+- ver3.1.2 : log 및 이미지에 user-uid, cam-name 부여를 통해 실제 서비스처럼 꾸미기
+- ver3.1.3 : 로그값 데이터프레임화 -> RDS 전송을 묶어 다른 스레드에서 처리하게끔 효율화
+- ver3.2.0 : 퇴치부 알람 객체에 따라 다른 소리가 재생되도록 구현
 
 """
 
@@ -178,25 +178,25 @@ from playsound import playsound # 경보음 재생을 위한 모듈
 # (1) 환경변수 방법
 # 안전한 AWS 연결을 위해 환경변수를 이용한 암호화를 진행했습니다. (+ gitignore)
 # 환경변수 방법을 이용하는 경우 별도의 세팅이 필요합니다. (카톡으로 직접 공유받은 경우, 별도 세팅 필요 없음. 단, 이 때 깃허브 업로드 금지)
-# load_dotenv([x for x in os.listdir(os.getcwd()) if x.endswith('.env')][0])
+load_dotenv([x for x in os.listdir(os.getcwd()) if x.endswith('.env')][0])
 # find_dotenv()
-# rds_host = os.environ['RDS_HOST']
-# rds_port = int(os.environ['RDS_PORT'])
-# rds_database = os.environ['RDS_DATABASE']
-# rds_username = os.environ['RDS_USERNAME']
-# rds_password = os.environ['RDS_PASSWORD']
-# s3_resource = os.environ['S3_RESOURCE']
-# s3_bucket_name = os.environ['S3_BUCKET_NAME']
+rds_host = os.environ['RDS_HOST']
+rds_port = int(os.environ['RDS_PORT'])
+rds_database = os.environ['RDS_DATABASE']
+rds_username = os.environ['RDS_USERNAME']
+rds_password = os.environ['RDS_PASSWORD']
+s3_resource = os.environ['S3_RESOURCE']
+s3_bucket_name = os.environ['S3_BUCKET_NAME']
 # (2) 직접선언 방법
 # 직접선언할 경우 보안상 문제가 있을 수 있으므로 추천하지 않습니다.
 # 반드시 코드 운용 후 보안상 문제 있는 부분은 지우고 저장해주세요.
-rds_host = "team06-antifragile-db.cxuncqkdvk3h.us-east-1.rds.amazonaws.com" # RDS 엔드포인트
-rds_port = 3306 # RDS 포트 번호
-rds_database = "antifragile" # RDS에서 이용할 데이터베이스 명 : antifragile
-rds_username = "admin" # RDS 계정
-rds_password = "antifragile1234" # RDS 계정 비밀번호
-s3_resource = 's3' # boto3를 이용해 접근할 객체 명 : S3
-s3_bucket_name = 'team06-antifragile-s3' # S3 버킷 이름.
+# rds_host = "" # RDS 엔드포인트
+# rds_port = 3306 # RDS 포트 번호
+# rds_database = "" # RDS에서 이용할 데이터베이스 명 : antifragile
+# rds_username = "" # RDS 계정
+# rds_password = "" # RDS 계정 비밀번호
+# s3_resource = 's3' # boto3를 이용해 접근할 객체 명 : S3
+# s3_bucket_name = 'team06-antifragile-s3' # S3 버킷 이름.
 
 
 # code start
@@ -384,14 +384,14 @@ def run_to_s3(resource, bucket_name, event_name, path):
     
 
 # 경보음 재생 메서드
-def sound_alarm(sound_path):
+def sound_alarm(sound_path, ):
     playsound(sound_path)
    
     
 # sound_alarm 멀티 스레드 실행 메서드
 def run_sound_alarm(sound_path):
     print('알람 재생 시작')
-    t = threading.Thread(target = sound_alarm, args = (sound_path))
+    t = threading.Thread(target = sound_alarm, args = (sound_path, ))
     t.start()
     print('알람 재생 완료')
 
@@ -533,7 +533,7 @@ def run(
                                                 annotator, imc, save_dir, p, windows, img_path, saving_img)
                         print(f'event_type : {event_type}')
                         
-                        run_sound_alarm('./beep.wav')
+                        run_sound_alarm('/Users/jongya/Desktop/Workspace/lab/20230210_sesac_final/yolov5/beep.wav')
                             
                         
                     elif len(det)&(event_type >= 1): # 이어서 객체가 계속 탐지될 때
