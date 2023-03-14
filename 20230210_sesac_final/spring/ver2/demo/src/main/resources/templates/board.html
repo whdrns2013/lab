@@ -1,0 +1,75 @@
+{% comment %} 위 코드에서 YOUR_ACCESS_KEY_ID, YOUR_SECRET_ACCESS_KEY, YOUR_REGION, YOUR_BUCKET_NAME에 대응하는 값을 X.Y.Z 부분을 변경해야 합니다. {% endcomment %}
+{% comment %} 실제 값으로 대체해야 합니다. 또한, AWS SDK 버전이 변경되면 https://sdk.amazonaws.com/js/aws-sdk-X.Y.Z.min.js에서 {% endcomment %}
+{% comment %} X.Y.Z 부분을 변경해야 합니다. {% endcomment %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>게시판</title>
+	<meta charset="utf-8">
+</head>
+<body>
+	<h1>게시판</h1>
+
+	<!-- 게시글 목록을 보여줄 영역 -->
+	<ul id="post-list"></ul>
+
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.410.0.min.js"></script>
+	<script>
+		// AWS SDK 설정
+		AWS.config.update({
+			accessKeyId: '',
+			secretAccessKey: '',
+			region: 'us-east-1'
+		});
+
+		// S3 객체 생성
+		var s3 = new AWS.S3();
+
+		// S3 버킷 이름
+		var bucketName = 'team06-antifragile-s3';
+
+		// S3 버킷에서 객체 목록을 가져오는 함수
+		function listObjects() {
+			s3.listObjects({ Bucket: bucketName }, function(err, data) {
+				if (err) {
+					console.log(err);
+				} else {
+					// 가져온 객체 목록에서 Key(파일 경로)만 추출하여 배열로 저장
+					var keys = data.Contents.map(function(obj) {
+						return obj.Key;
+					});
+
+					// 게시글 목록을 보여주는 함수 호출
+					showPosts(keys);
+				}
+			});
+		}
+
+		// 게시글 목록을 보여주는 함수
+		function showPosts(keys) {
+			// 게시글 목록을 보여줄 ul 요소
+			var postList = document.getElementById('post-list');
+
+			// Key(파일 경로)를 이용하여 S3 객체를 가져오고, 각 객체의 이미지를 li 요소에 추가하여 ul 요소에 추가
+			keys.forEach(function(key) {
+				s3.getObject({ Bucket: bucketName, Key: key }, function(err, data) {
+					if (err) {
+						console.log(err);
+					} else {
+						var imageUrl = URL.createObjectURL(new Blob([data.Body]));
+						var listItem = document.createElement('li');
+						var image = document.createElement('img');
+						image.src = imageUrl;
+						listItem.appendChild(image);
+						postList.appendChild(listItem);
+					}
+				});
+			});
+		}
+
+		// 페이지 로드 시 게시글 목록을 가져오는 함수 호출
+		listObjects();
+	</script>
+</body>
+</html>

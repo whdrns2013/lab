@@ -26,10 +26,10 @@ public class HomeController {
         session.invalidate();
         return "main";
     }
-    
+
     @GetMapping("/userPage")
     public String userPage (Model model, HttpSession session){
-        
+
         ArrayList<EventList> eventList = eventListMapper.selectAll();
         model.addAttribute("eventList", eventList);
         System.out.println("event list : " + eventList);
