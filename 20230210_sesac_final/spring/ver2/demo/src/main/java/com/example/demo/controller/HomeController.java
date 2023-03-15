@@ -18,7 +18,9 @@ import jakarta.servlet.http.HttpSession;
 public class HomeController {
 
     @Autowired
-    DetailMapper eventListMapper;
+    DetailMapper detailListMapper;
+    EventListMapper eventListMapper;
+
 
 
     @GetMapping("/")

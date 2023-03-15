@@ -2,7 +2,7 @@ package com.example.demo.mapper;
 
 import java.util.ArrayList;
 
-import org.apache.ibatiss.annotations.Mapper;
+import org.apache.ibatis.annotations.Mapper;
 
 import com.example.demo.model.EventList;
 
@@ -10,5 +10,5 @@ import com.example.demo.model.EventList;
 public interface EventListMapper {
 
     public ArrayList<EventList> selectAll();
-    
+
 }

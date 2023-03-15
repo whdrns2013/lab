@@ -1,0 +1,22 @@
+<html>
+
+<body>
+
+
+    <table border="1">
+        <tr>
+            <td style="background-color:rgb(192, 192, 192)">detect_date</td>
+            <td style="background-color:rgb(192, 192, 192)">event_name</td>
+        </tr>
+        <th:block th:each=" event : ${eventList} ">
+            <tr>
+            <td><span>[[${event.detecte_date}]]</span></td>
+            <td><span><a href="/detailPage?event_name=[[${event.event_name}]]"> [[${event.event_name}]]</a></span></td>
+            </tr>
+        </th:block>
+    </table>
+
+
+</body>
+
+</html>
