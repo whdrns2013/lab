@@ -1,8 +1,23 @@
 <html>
 
 <body>
+    <h1> 이벤트 상세 보기 </h1>
 
+    <br>
+    <br>
 
+    <h2> 최초 등장 </h2>
+    <img th:src="@{https://team06-antifragile-s3.s3.amazonaws.com/} + ${event_name} + @{/start.jpg}" 
+    style="max-width:90%; height:auto;"/>
+
+    <h2> 퇴장 </h2>
+    <img th:src="@{https://team06-antifragile-s3.s3.amazonaws.com/} + ${event_name} + @{/end.jpg}" 
+    style="max-width:90%; height:auto;" />
+    
+    <br>
+    <br>
+
+    <h2> 상세 로그 </h2>
     <table border="1">
         <tr>
             <td style="background-color:rgb(192, 192, 192)">event_name</td>
@@ -29,6 +44,10 @@
             </tr>
         </th:block>
     </table>
+
+    <br>
+    <br>
+    <br>
 
 
 </body>

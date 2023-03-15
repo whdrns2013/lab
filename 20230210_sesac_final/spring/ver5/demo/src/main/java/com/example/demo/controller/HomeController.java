@@ -45,6 +45,7 @@ public class HomeController {
 
         ArrayList<DetailList> detailList = detailMapper.select(event_name);
         model.addAttribute("detailList", detailList);
+        model.addAttribute("event_name", event_name);
 
         return "detailPage";
     }
