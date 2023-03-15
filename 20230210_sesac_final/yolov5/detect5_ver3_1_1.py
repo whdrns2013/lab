@@ -239,7 +239,7 @@ def save_log_and_img_method(det, im, im0, s, now, save_txt, gn, save_conf, txt_p
             if save_txt:  # Write to file
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                 line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                timestamp = now.strftime("%Y-%m-%d%H:%M:%S.%f") # 종혁 추가 : 타임스탬프
+                timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f") # 종혁 추가 : 타임스탬프
                 with open(f'{txt_path}/{timestamp}.txt', 'a') as f:
                     f.write(timestamp + s + '\n')
 
@@ -527,7 +527,7 @@ def run(
                         
                     elif len(det)&(event_type == 0): # 처음으로 감지 대상이 잡혔을 때 -> refactoring시 가장 마지막으로 가는 게 자원효율 상 좋을 것
                         event_type = 1 # 객체 감지됨
-                        event_name = now.strftime("%Y-%m-%d %H-%M-%S") # 이벤트명 : 최초탐지시간
+                        event_name = now.strftime("%Y-%m-%d-%H-%M-%S") # 이벤트명 : 최초탐지시간
                         time_stamp_old = time_stamp # 이전 감지시간 기록
                         txt_path = str(save_dir / event_name / 'logs') # 로그 저장 경로 설정
                         img_path = str(save_dir / event_name / 'images') # 이미지 저장 경로 설정
