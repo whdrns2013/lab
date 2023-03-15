@@ -8,7 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.demo.mapper.EventListMapper;
+import com.example.demo.mapper.DetailMapper;
 import com.example.demo.model.EventList;
 
 
@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpSession;
 public class HomeController {
 
     @Autowired
-    EventListMapper eventListMapper;
+    DetailMapper eventListMapper;
 
 
     @GetMapping("/")
@@ -38,9 +38,9 @@ public class HomeController {
     }
 
     @GetMappiing("/detail")
-    public String detail (Model model, HttpSession session){
+    public String detail (@RequestParam String event_name, Model model, HttpSession session){
 
-        ArrayList<DetailList> detailList = detailListMapper.sellect();
+        ArrayList<DetailList> detailList = detailMapper.sellect(event_name);
         model.addAttribute("detailList". detailList);
         
         return "detail";

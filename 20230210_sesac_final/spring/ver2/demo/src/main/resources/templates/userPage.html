@@ -5,27 +5,13 @@
 
     <table border="1">
         <tr>
-            <td style="background-color:rgb(192, 192, 192)">event_name</td>
             <td style="background-color:rgb(192, 192, 192)">detect_date</td>
-            <td style="background-color:rgb(192, 192, 192)">detect_time</td>
-            <td style="background-color:rgb(192, 192, 192)">object1_name</td>
-            <td style="background-color:rgb(192, 192, 192)">object1_num</td>
-            <td style="background-color:rgb(192, 192, 192)">object2_name</td>
-            <td style="background-color:rgb(192, 192, 192)">object2_num</td>
-            <td style="background-color:rgb(192, 192, 192)">object3_name</td>
-            <td style="background-color:rgb(192, 192, 192)">object3_num</td>
+            <td style="background-color:rgb(192, 192, 192)">event_name</td>
         </tr>
         <th:block th:each=" event : ${eventList} ">
             <tr>
-            <td><span>[[${event.event_name}]]</span></td>
             <td><span>[[${event.detecte_date}]]</span></td>
-            <td><span>[[${event.detect_time}]]</span></td>
-            <td><span>[[${event.object1_name}]]</span></td>
-            <td><span>[[${event.object1_num}]]</span></td>
-            <td><span>[[${event.object2_name}]]</span></td>
-            <td><span>[[${event.object2_num}]]</span></td>
-            <td><span>[[${event.object3_name}]]</span></td>
-            <td><span>[[${event.object3_num}]]</span></td>
+            <td><span><a href="/detail?event_name=${event_name}"> [[${event.event_name}]]</a></span></td>
             </tr>
         </th:block>
     </table>
