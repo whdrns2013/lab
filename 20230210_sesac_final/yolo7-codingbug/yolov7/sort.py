@@ -100,9 +100,13 @@ class KalmanBoxTracker(object):
         self.hit_streak = 0
         self.age = 0
         self.centroidarr = []
+        self.bottom_center = [] # 종혁 추가 : 객체의 중앙 하단 값
         CX = (bbox[0]+bbox[2])//2
         CY = (bbox[1]+bbox[3])//2
         self.centroidarr.append((CX,CY))
+        CBX = (bbox[0]+bbox[2])//2
+        CBY = bbox[3]
+        self.bottom_center.append((CBX, CBY))
         
         
         #keep yolov5 detected class information
@@ -121,6 +125,9 @@ class KalmanBoxTracker(object):
         CX = (bbox[0]+bbox[2])//2
         CY = (bbox[1]+bbox[3])//2
         self.centroidarr.append((CX,CY))
+        CBX = (bbox[0]+bbox[2])//2
+        CBY = bbox[3]
+        self.bottom_center.append((CBX, CBY))
         
     def predict(self):
         """
@@ -226,7 +233,7 @@ class Sort(object):
     def getTrackers(self,):
         return self.trackers
         
-    def update(self, dets= np.empty((0,6)), unique_color = False):
+    def update(self, dets= np.empty((0,6)), unique_color = False, remove_old_track=False):
         """
         Parameters:
         'dets' - a numpy array of detection in the format [[x1, y1, x2, y2, score], [x1,y1,x2,y2,score],...]
@@ -267,7 +274,6 @@ class Sort(object):
             if unique_color:
                 self.color_list.append(get_color())
         
-        
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
@@ -275,10 +281,11 @@ class Sort(object):
                 ret.append(np.concatenate((d, [trk.id+1])).reshape(1,-1)) #+1'd because MOT benchmark requires positive value
             i -= 1
             #remove dead tracklet
-            if(trk.time_since_update >self.max_age):
-                self.trackers.pop(i)
-                if unique_color:
-                    self.color_list.pop(i)
+            if(remove_old_track): # 종혁 추가 : 객체가 사라지면 트랙 삭제
+                if(trk.time_since_update >self.max_age):
+                    self.trackers.pop(i)
+                    if unique_color:
+                        self.color_list.pop(i)
 
         if(len(ret) > 0):
             return np.concatenate(ret)

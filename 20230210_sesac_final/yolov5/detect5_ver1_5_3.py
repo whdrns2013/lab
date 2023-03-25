@@ -98,7 +98,7 @@ Usage - formats:
 
 5-3. 실행
 - cmd 등의 명령 프롬프트를 통해 본 파일이 있는 곳으로 디렉토리 이동한 뒤, 아래 명령어를 실행해주세요.
-- python detect5_ver1_5_5.py --weights ./runs/best/best_2.pt --source 0 --save-txt --saving-img --detecting-time 3 --conf-thres 0.2
+- python detect5_ver1_5_3.py --weights ./runs/best/best_2.pt --source 0 --save-txt --saving-img --detecting-time 3 --conf-thres 0.1
 - 실행 명령어에 대한 설명은 아래 6.세부 사항에서 다룹니다.
 
 
