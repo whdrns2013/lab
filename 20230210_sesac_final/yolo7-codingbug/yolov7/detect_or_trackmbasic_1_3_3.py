@@ -1,8 +1,24 @@
 '''
+############################################################################
+##########################  detect.py 명세서  ################################
+############################################################################
+
+1-1. 주요 기능
+- YOLOv7 모델을 통한 객체 인식(탐지) 기능
+- 객체 tracking (sort)
+- 객체 인식(탐지) 결과를 이미지와 로그데이터로 자동 저장
+
+1-2. 부가 기능
+- 저장된 로그데이터를 RDS에 자동 업로드
+- 저장된 이미지파일을 S3에 자동 업로드
+- 이미지들을 자동으로 gif로 만드는 기능 (구현했으나, 실행되지 않게 막음)
+- 객체가 위험구역 내에서 탐지되면 자동 경보 울림
 
 % 명령어
 --remove-old-track : 사라진 객체의 tracking 선을 제거합니다.
-python detect_or_trackmbasic_1_3_2.py --weights best.pt --no-trace --view-img --source 0 --track --show-track --unique-track-color --danger-range 0.5 --conf-thres 0.7 --detecting-time 10
+--danger-range 0.x : 객체가 화면의 x% 범위 내로 접근하면 알람이 울리도록 범위 설정
+--conf-thres 0.y : 객체 인식 신뢰도
+python detect_or_trackmbasic_1_3_3.py --weights wild5_retry.pt --no-trace --view-img --source 0 --track --show-track --unique-track-color --danger-range 0.5 --conf-thres 0.7 --detecting-time 10
 
 % 코드 버전 내역
 ver1.0.0 : 객체 탐지 및 경로 추적 기능
@@ -14,26 +30,46 @@ ver1.1.4 : detect 메서드 내 minimap 메서드 삭제
 ver1.2.0 : 객체가 사라진 후 tracking 선을 유지할지 말지 결정할 수 있게 업데이트 (sort.py 변경)
 ver1.2.1 : 객체 경로 추적 선 화살표로 변경, 경로 추적점을 중앙 하단으로 변경
 ver1.2.2 : tracking 메서드화
-ver1.3.1 : 이미지 저장, 로그 저장 알고리즘 구현
+ver1.3.0 : 이미지 저장, 로그 저장, RDS, S3 저장 알고리즘 구현
+ver1.3.1 : 이미지 저장, 로그 저장 알고리즘 개선
+ver1.3.2 : trace와 실제 객체 위치 다른 오류 해결, 저장 및 알람 알고리즘 개선, 이벤트 종료시 trace 기록 삭제
 
-% ver1.3.2 주요 사항
-- trace 가 실제 객체 위치와 다른 점 개선 : det[:,:4] rescale (이미지 사이즈에 맞게 리스케일)
-- 알람 울리게 개선
-- 저장/알람 알고리즘 개선
-- 이벤트 종료시 track 리스트 삭제
-- 객체 탐지시 이미지 저장 문제 없음을 확인함
+% ver1.3.3 주요 사항
+- 속도 개선 테스트
+
+% 속도 개선 테스트
+현황
+- yolov7, detect1.3.2, best.pt 기준 : 최소 400ms ~ 최대 1700ms
+- Inference : 400ms ~ 1700ms
+- NMS(normalization) : 0.1 ~ 0.3ms
+- operation(sort, 저장, 알람) : 0.0ms
+현황 진단
+- sort, 알람, 저장 등의 추가한 기능들은 속도에 영향이 거의 없음
+- 즉, yolov7 자체의 추론 시간이 너무 길다는 게 문제.
+속도 개선 테스트 1
+- weight 교체 : 원래 best.pt(207MB) -> wild5_retry.pt(75MB)
+- 유의미한 결과 : best.pt에서는 탐지 객체가 많아지면 속도가 1700ms(1.7초)까지 느려졌으나, wild5_retry에서는 최소 400ms ~ 최대 580ms 로 안정적
+- 하지만, 사람을 야생동물로 잡는 문제는 여전히 발생 - 이 부분은 개선될 것으로 기대
+결론
+(1) weight 파일의 용량이 작을수록 처리 속도가 안정적
+(2) 추가 기능(operation)은 처리 속도에 거의 영향을 끼치지 않음
+(3) 2번에 따라, yolov5에 sort등 operation을 추가하는 게 성능 개선으로는 가장 합리적인 선택
+(4) 하지만 이미 구축한 yolov7의 알고리즘을 yolov5에 최적화하는 데에는 1~2일의 시간이 필요할 것으로 예상되며, sort를 적용할 수 있을지도 미지수
+(5) yolov7을 사용하려면 Inference, 즉 순정 yolov7 성능 튜닝이 필요하며
+(6) 5번에 이어서, yolov7 자체의 성능 튜닝 없이는 double buffering을 적용한다 해도 성능 자체 개선은 되지 않으므로, 객체 추적은 여전히 400ms ~ 500ms interval로 진행됨 (0.4초 ~ 0.5초)
 
 % To Do
 - yolov7 처리 속도 개선
 - 비디오 기록되도록
--캠 ID 넣기
+- event_type 1일 때, 객체가 danger-range 이내로 들어와도 알람이 울리지 않는 문제 개선
+- 캠 ID 넣기
 - 탐지 화면에서 객체 이름 제대로 나오도록
+- 명세서 작성
 
-# 우려점
+% 우려점
 - sort에 대해서 설명할 수가 없음
 - sort 는 각 객체별 위치정보와 표시 색상을 정한 후, 이를 for문으로 돌면서 그려주는 것인데..
-- yolo7 처리 속도 느림 / sort가 추가되었다고 해도, yolov5 interval 60ms, yolov7 interval 400~1700ms, 최소 6배 ~ 30배 느림/ cpu 연산량 자체가 너무 많음. 무거움
-
+- yolo7 처리 속도 느림 / sort가 추가되었다고 해도, yolov5 interval 110~130ms, yolov7 interval 400~1700ms, 최소 3배 ~ 15배 느림/ cpu 연산량 자체가 너무 많음. 무거움
 
 '''
 
@@ -546,6 +582,8 @@ def detect(save_img=True):
                     time_stamp_old = time_stamp
                     first_time = now.timestamp()
                      
+            # 종혁 추가
+            t4 = time_synchronized()
             
             # if len(det):
             #     # Rescale boxes from img_size to im0 size
@@ -567,7 +605,8 @@ def detect(save_img=True):
             
             
             # Print time (inference + NMS)
-            print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
+            # 종혁 추가 : tracking 쪽 시간측정도 추가 (t4-t3)
+            print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS, ({(t4 - t3):.1f}ms) operation')
 
 
             # Stream results
@@ -604,19 +643,19 @@ def detect(save_img=True):
             #             vid_writer, vid_path = saving_videos(vid_writer, vid_path, save_dir, im0, vid_cap)
 
             ## 비디오 경로
-            vid_path = str(save_dir) + '/' + 'temp'
-            ##
+            # vid_path = str(save_dir) + '/' + 'temp'
+            # ##
 
-            # 종료 조건 추가
-            if len(det) == 0 and dataset.mode != 'image':
-                if webcam:
-                    continue
-                else:
-                    if vid_path is not None:
-                        vid_writer.release()
-                        print(f"The video file {vid_path} is saved.")
-                    cv2.waitKey(0)
-                    break
+            # # 종료 조건 추가
+            # if len(det) == 0 and dataset.mode != 'image':
+            #     if webcam:
+            #         continue
+            #     else:
+            #         if vid_path is not None:
+            #             vid_writer.release()
+            #             print(f"The video file {vid_path} is saved.")
+            #         cv2.waitKey(0)
+            #         break
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

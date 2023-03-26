@@ -32,7 +32,7 @@ Usage - formats:
 ##########################  detect.py 명세서  ################################
 ############################################################################
 
-## 실행코드 : python detect5_ver1_5_3.py --weights ./runs/best/best_5.pt --source 0 --save-txt --saving-img --detecting-time 3 --conf-thres 0.2
+## 실행코드 : python detect5_ver1_5_6.py --weights ./runs/best/best_5.pt --source 0 --save-txt --saving-img --detecting-time 3 --conf-thres 0.2
 
 
 1. 목적
