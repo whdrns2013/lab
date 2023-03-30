@@ -41,3 +41,13 @@ thop  # FLOPs computation
 # Tracking ------------------------------------
 filterpy
 scikit-image
+
+# Sound ------------------------------------
+pydub
+
+# dotenv ------------------------------------
+python-dotenv
+
+# AWS ------------------------------------
+pymysql
+boto3

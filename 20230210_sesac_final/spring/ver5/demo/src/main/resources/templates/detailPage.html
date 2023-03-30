@@ -10,12 +10,22 @@
     <img th:src="@{https://team06-antifragile-s3.s3.amazonaws.com/} + ${event_name} + @{/start.jpg}" 
     style="max-width:90%; height:auto;"/>
 
+    <br>
+
     <h2> 퇴장 </h2>
     <img th:src="@{https://team06-antifragile-s3.s3.amazonaws.com/} + ${event_name} + @{/end.jpg}" 
     style="max-width:90%; height:auto;" />
-    
+
+    <br>
+
+    <!-- 여기서부터 -->
+    <h2> 탐지 영상 </h2>
+    <video width="900" height="600" controls>
+        <source th:src="@{https://team06-antifragile-s3.s3.amazonaws.com/} + ${event_name} + @{/detect_vid.mp4}">
+    </video>
     <br>
     <br>
+    <!-- 여기까지 -->
 
     <h2> 상세 로그 </h2>
     <table border="1">

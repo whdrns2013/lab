@@ -14,6 +14,11 @@
 - 이미지들을 자동으로 gif로 만드는 기능 (구현했으나, 실행되지 않게 막음)
 - 객체가 위험구역 내에서 탐지되면 자동 경보 울림
 
+추가. AWS CLI 세팅 : AWS 자동저장 기능 사용시에 한함
+- 로컬 PC에 미리 AWS CLI 세팅을 해 둬야 합니다.
+- 세팅을 하지 않을 경우 S3로 이미지가 업로드되지 않거나 오류 발생으로 코드 중지될 수 있습니다.
+- 직접 Access key 등을 입력하는 것은 보안상 문제가 있으므로 허용하지 않습니다.
+
 % 명령어
 --remove-old-track : 사라진 객체의 tracking 선을 제거합니다.
 --danger-range 0.x : 객체가 화면의 x% 범위 내로 접근하면 알람이 울리도록 범위 설정
@@ -51,7 +56,7 @@ ver1.3.2 : trace와 실제 객체 위치 다른 오류 해결, 저장 및 알람
 - 유의미한 결과 : best.pt에서는 탐지 객체가 많아지면 속도가 1700ms(1.7초)까지 느려졌으나, wild5_retry에서는 최소 400ms ~ 최대 580ms 로 안정적
 - 하지만, 사람을 야생동물로 잡는 문제는 여전히 발생 - 이 부분은 개선될 것으로 기대
 결론
-(1) weight 파일의 용량이 작을수록 처리 속도가 안정적
+(1) weight 파일의 용량이 작을수록 처리 속도가 안정적 (추가 실험 필요)
 (2) 추가 기능(operation)은 처리 속도에 거의 영향을 끼치지 않음
 (3) 2번에 따라, yolov5에 sort등 operation을 추가하는 게 성능 개선으로는 가장 합리적인 선택
 (4) 하지만 이미 구축한 yolov7의 알고리즘을 yolov5에 최적화하는 데에는 1~2일의 시간이 필요할 것으로 예상되며, sort를 적용할 수 있을지도 미지수
@@ -97,7 +102,8 @@ from sort import * # 객체를 추적한다.
 
 import os
 import pandas as pd
-import playsound
+from pydub import AudioSegment
+from pydub.playback import play
 import threading
 from dotenv import load_dotenv, find_dotenv
 import pymysql
@@ -140,7 +146,11 @@ def saving_images(img_path, time_stamp_txt, im0):
     
 # 종혁 : 알람 사운드
 def sounding(soundpath):
-    playsound.playsound(soundpath)
+    print("경보 알람 재생")
+    # playsound.playsound(soundpath)
+    sound = AudioSegment.from_file(soundpath, format="WAV")
+    play(sound)
+    print("경보 알람 종료")
 
 # 종혁 : 알람 사운드 멀티 스레드
 def run_sounding(soundpath):
