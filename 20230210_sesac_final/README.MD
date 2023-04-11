@@ -2,6 +2,7 @@
 
 **ANTI-FRAGILE 팀 : 박종혁, 심재훈, 손원준, 윤율**  
 
+## 서비스 시연 동영상
 
 [![미리보기](./video_screenshot.jpg)](https://youtu.be/N_B2FDlZ5io)
 
