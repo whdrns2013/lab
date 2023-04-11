@@ -2,7 +2,7 @@
 
 **ANTI-FRAGILE 팀 : 박종혁, 심재훈, 손원준, 윤율**  
 
-<video controls autoplay>
+<video controls autoplay width="500">
 <source src="./02. 서비스 동영상_anti_fragile.mp4">
 </video>
 
