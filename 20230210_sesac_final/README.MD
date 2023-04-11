@@ -8,7 +8,7 @@
 
 ## 1. INTRO
 
-* 발표자료 : [발표자료.pdf](/02. 발표자료_anti-fragile.pdf)  
+* 발표자료 : [발표자료.pdf](/01.%20%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C_anti-fragile.pdf)  
 * 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
 
 <br>
@@ -18,7 +18,7 @@
 
 미리 훈련된 weight 파일을 사용하고자 하는 경우 `4.실행` 부분을 참고해주세요.  
 
-### 데이터셋 다운로드 (직접 훈련시)  
+### 2-1. 데이터셋 다운로드 (직접 훈련시)  
 
 * 야생동물 데이터 다운로드  
 https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=645  
@@ -30,7 +30,7 @@ https://public.roboflow.com/object-detection/microsoft-coco-subset
 https://soonminhwang.github.io/rgbt-ped-detection/  
 
 
-### requirements 설치  
+### 2-2. requirements 설치  
 
 ```terminal
 pip install -r ./yolov7/requirements.txt
