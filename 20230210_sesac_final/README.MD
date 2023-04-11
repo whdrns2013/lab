@@ -46,7 +46,7 @@ pip install -r ./yolov7/requirements.txt
 [주야간 통합 훈련 : 야생동물만](/train/yolov7_train_%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC.ipynb)  
 [주간 + COCO 데이터셋 훈련](/train/yolov7_train_coco%EA%B0%80%EC%A4%91%EC%B9%98%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%A3%BC%EA%B0%84_%EC%A0%84%EC%9D%B4%ED%95%99%EC%8A%B5.ipynb)  
 [야간 + COCO 데이터셋 훈련](/train/yolov7_train_coco%EA%B0%80%EC%A4%91%EC%B9%98%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%95%BC%EA%B0%84_%EC%A0%84%EC%9D%B4%ED%95%99%EC%8A%B5.ipynb)  
-[야간 + KAIST 데이터셋 훈련](/train/yolov7_train_KAIST%EC%95%BC%EA%B0%84%EB%B3%B4%ED%96%89%EC%9E%90%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%95%BC%EA%B0%84_%EC%9D%BC%EB%B0%98%ED%95%99%EC%8A%B5.ipynb)  
+[야간 + KAIST 데이터셋 훈련](/train/yolov7_train_KAIST야간보행자%2B야생동물4종_야간_일반학습.ipynb)  
 
 <br>
 <br>
