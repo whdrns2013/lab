@@ -83,3 +83,10 @@ python detect_or_trackmbasic_1_3_7.py --weights coco2wild4_night_12epoch_best.pt
 --unique-track-color : 객체 경로를 서로 다른 색으로 지정한다.
 ```
 
+<br>
+<br>
+
+## 참고 사항
+
+* AWS 연결 정보를 담고 있는 환경변수 파일(.env)는 보안상 업로드하지 않았습니다.  
+* 관련 사항은 상황에 맞게 사용하는 서버로 대체되어야 합니다.  
