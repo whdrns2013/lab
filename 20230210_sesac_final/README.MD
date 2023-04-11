@@ -9,7 +9,7 @@
 ## 1. INTRO
 
 * 발표자료 : [발표자료.pdf](./01.%20%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C_anti-fragile.pdf)  
-* 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
+* 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](/04.%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
 
 <br>
 <br>
@@ -45,7 +45,7 @@ pip install -r ./yolov7/requirements.txt
 
 [주야간 통합 훈련 : 야생동물만](/train/yolov7_train_%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC.ipynb)  
 [주간 + COCO 데이터셋 훈련](/train/yolov7_train_coco%EA%B0%80%EC%A4%91%EC%B9%98%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%A3%BC%EA%B0%84_%EC%A0%84%EC%9D%B4%ED%95%99%EC%8A%B5.ipynb)  
-[야간 + COCO 데이터셋 훈련](/train/yolov7_train_coco%EA%B0%80%EC%A4%91%EC%B9%98%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%A3%BC%EA%B0%84_%EC%A0%84%EC%9D%B4%ED%95%99%EC%8A%B5.ipynb)  
+[야간 + COCO 데이터셋 훈련](/train/yolov7_train_coco%EA%B0%80%EC%A4%91%EC%B9%98%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%95%BC%EA%B0%84_%EC%A0%84%EC%9D%B4%ED%95%99%EC%8A%B5.ipynb)  
 [야간 + KAIST 데이터셋 훈련](/train/yolov7_train_KAIST%EC%95%BC%EA%B0%84%EB%B3%B4%ED%96%89%EC%9E%90%2B%EC%95%BC%EC%83%9D%EB%8F%99%EB%AC%BC4%EC%A2%85_%EC%95%BC%EA%B0%84_%EC%9D%BC%EB%B0%98%ED%95%99%EC%8A%B5.ipynb)  
 
 <br>
