@@ -3,13 +3,13 @@
 **ANTI-FRAGILE 팀 : 박종혁, 심재훈, 손원준, 윤율**  
 
 <video controls autoplay width="500">
-<source src="/02.%20%EC%84%9C%EB%B9%84%EC%8A%A4%20%EB%8F%99%EC%98%81%EC%83%81_anti_fragile.mp4">
+<source src="./02.%20%EC%84%9C%EB%B9%84%EC%8A%A4%20%EB%8F%99%EC%98%81%EC%83%81_anti_fragile.mp4">
 </video>
 
 ## 1. INTRO
 
 * 발표자료 : [발표자료.pdf](./01.%20%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C_anti-fragile.pdf)  
-* 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](/04.%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
+* 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](./04.%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
 
 <br>
 <br>
