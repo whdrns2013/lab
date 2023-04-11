@@ -3,7 +3,7 @@
 **ANTI-FRAGILE 팀 : 박종혁, 심재훈, 손원준, 윤율**  
 
 
-[![미리보기](./video_screenshot.png)](https://youtu.be/N_B2FDlZ5io)
+[![미리보기](./video_screenshot.jpg)](https://youtu.be/N_B2FDlZ5io)
 
 <br>
 <br>
