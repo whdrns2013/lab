@@ -143,9 +143,10 @@ python detect_or_trackmbasic_1_3_7.py --weights coco2wild4_night_12epoch_best.pt
 
 ### 👥 팀 구성원
 
-|![](/src/team-01.png)|![](/src/team-02.png)|![](/src/team-03.png)|![](/src/team-04.png)|
+|![](./src/team-01.png)|![](./src/team-02.png)|![](./src/team-03.png)|![](./src/team-04.png)|
 |---|---|---|---|
-|박종혁(팀장)<br>백엔드 개발<br>모델-서버 연결|윤율<br>프론트엔드 개발<br>기획|심재훈<br>백엔드 개발<br>경로추적 구현|손원준<br>백엔드 개발<br>모델 학습|
+|<center>박종혁(팀장)<br>* 백엔드 개발<br>* 모델-서버 연결|<center>윤율<br>* 프론트엔드 개발<br>* 기획|<center>심재훈<br>* 백엔드 개발<br>* 경로추적 구현|<center>손원준<br>* 백엔드 개발<br>* 모델 학습|
+|<center>whdrns2013@naver.com<br>https://github.com/whdrns2013/|https://velog.io/@human_power22|https://blog.naver.com/doctorsim1|https://velog.io/@swj6446|
 
 <br>
 <br>
