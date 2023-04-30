@@ -51,6 +51,7 @@
 
 * 발표자료 : [발표자료.pdf](./01.%20%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C_anti-fragile.pdf)  
 * 프로젝트 상세내용 : [프로젝트 상세내용.xlsx](./04.%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%83%81%EC%84%B8%EB%82%B4%EC%9A%A9_antifragile.xlsx)  
+* 연구노트 : [단안카메라를_통한_객체_거리측정.pdf](./05.%20%EC%97%B0%EA%B5%AC%EB%85%B8%ED%8A%B8_%EB%8B%A8%EC%95%88%EC%B9%B4%EB%A9%94%EB%9D%BC%EB%A5%BC_%ED%86%B5%ED%95%9C_%EA%B0%9D%EC%B2%B4_%EA%B1%B0%EB%A6%AC%EC%B8%A1%EC%A0%95.pdf)
 
 <br>
 <br>
