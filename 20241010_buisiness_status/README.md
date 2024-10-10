@@ -12,7 +12,7 @@ API 서비스 키는 공공 데이터포털에서 발급받아햐 합니다.
 
 
 ## Download executable file  
-윈도우 64비트 : [buisiness_status_win64](./buisiness_status_win64.zip)  
+윈도우 64비트 : [buisiness_status_win64](https://github.com/whdrns2013/lab/blob/c9dca0c8a212d71bba4249414a91767cad163323/20241010_buisiness_status/buisiness_status_win64.zip)  
 
 
 ## Required Libraries
