@@ -1,10 +1,11 @@
 from typing import List, Union
 import requests
 from datetime import datetime
-import pandas as pd
+import openpyxl, xlrd, csv
+import chardet
 import json
 import sys 
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMainWindow, QLineEdit, QPushButton, QLabel, QFileDialog, QApplication
 from PyQt5.QtCore import Qt
 
 # 파일 정보
@@ -57,37 +58,63 @@ def excel_column_to_number(column_name):
         result = result * 26 + (ord(char.upper()) - ord('A') + 1)
     return result
 
+# input 파일 읽고 사업자 등록 번호 리스팅
+def listing_buisiness_nos(file_info):
+    buisiness_no_list = []
+    if file_info.input_file_path.split('.')[-1] == 'xlsx':
+        wb = openpyxl.load_workbook(file_info.input_file_path)
+        sheet = wb.active
+        try:
+            b_no_index = int(file_info.column_num) - 1
+        except:
+            if is_all_alpha(file_info.column_num):
+                b_no_index = excel_column_to_number(file_info.column_num)-1
+            else:
+                b_no_index = list(next(sheet.iter_rows(values_only=True))).index("사업자등록 번호")
+        for row in sheet.iter_rows(values_only=True):
+            buisiness_no_list.append(row[b_no_index])
+    elif file_info.input_file_path.split('.')[-1] == 'xls':
+        wb = xlrd.open_workbook(file_info.input_file_path)
+        sheet = wb.sheet_by_index(0)
+        try:
+            b_no_index = int(file_info.column_num) - 1
+        except:
+            if is_all_alpha(file_info.column_num):
+                b_no_index = excel_column_to_number(file_info.column_num)-1
+            else:
+                b_no_index = sheet.row_values(0).index("사업자등록 번호")
+        for row_idx in range(sheet.nrows):
+            row = sheet.row_values(row_idx)
+            buisiness_no_list.append(row[b_no_index])
+    elif file_info.input_file_path.split('.')[-1] == 'csv':
+        with open(file_info.input_file_path, 'rb') as f:
+            raw_data = f.read()
+            encoding = chardet.detect(raw_data)['encoding']
+
+        with open(file_info.input_file_path, newline = '', encoding=encoding) as f:
+            reader = csv.reader(f)
+            try:
+                b_no_index = int(file_info.column_num) - 1
+            except:
+                if is_all_alpha(file_info.column_num):
+                    b_no_index = excel_column_to_number(file_info.column_num)-1
+                else:
+                    b_no_index = next(reader).index("사업자등록 번호")
+            for row in reader:
+                buisiness_no_list.append(row[b_no_index])
+    return buisiness_no_list
+
 # 사업자 상태 조회
-def process(input_file_path, output_dir_path, service_key, column_num):
+def process(file_info, service_key):
     # global 설정 정보
     glbs = Globals()
     
-    # 파일 정보
-    file_info = FileInfo(input_file_path, output_dir_path, column_num)
-
     # Request Param
     request_body = RequestBody()
     request_param = RequestParam(glbs.base_url, service_key, request_body)
 
-    # 파일 읽기
-    if input_file_path.split('.')[-1] == 'xlsx':
-        df = pd.read_excel(file_info.input_file_path)
-    elif input_file_path.split('.')[-1] == 'xls':
-        df = pd.read_excel(file_info.input_file_path)
-    elif input_file_path.split('.')[-1] == 'csv':
-        df = pd.read_csv(file_info.input_file_path)
-
-    # 사업자등록 번호 리스팅
-    try:
-        try:
-            buisiness_no_list = df.iloc[:,int(column_num)-1].to_list()
-        except:
-            if is_all_alpha(column_num):
-                buisiness_no_list = df[:,excel_column_to_number(column_num)-1]
-            else:
-                buisiness_no_list = df['사업자등록 번호'].to_list()
-    except:
-        return 0
+    # 파일 읽고 사업자 등록 번호 리스팅
+    buisiness_no_list = listing_buisiness_nos(file_info)
 
     # 요청 (100개씩)
     result = {'b_no':[], 'status':[]}
@@ -103,10 +130,11 @@ def process(input_file_path, output_dir_path, service_key, column_num):
             result['status'].append(status)
 
     # 출력 파일 만들기
-    output_df = pd.DataFrame(result)
-    output_df.to_csv(output_dir_path + f'/사업자상태조회_{datetime.now().strftime("%Y-%m-%d")}.csv', encoding='utf-8')
-
-
+    with open(file_info.output_dir_path + f'/사업자상태조회_{datetime.now().strftime("%Y-%m-%d")}.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        writer.writerow(['b_no_origin', 'b_no', 'status'])
+        for b_no_origin, b_no, status in zip(buisiness_no_list, result['b_no'], result['status']):
+            writer.writerow([b_no_origin, b_no, status])
 
 # line edit
 class CustomLineEdit(QLineEdit):
@@ -204,8 +232,9 @@ class MyWindow(QMainWindow):
             self.process_status.setStyleSheet("color : red;")
         else:
             try:
-                process(input_file_path, output_dir_path, service_key, column_num)
-                self.process_status.setText('작업 완료')
+                file_info = FileInfo(input_file_path, output_dir_path, column_num)
+                process(file_info, service_key)
+                self.process_status.setText('조회 완료')
                 self.process_status.setStyleSheet("color : blue;")
                 return 1
             except:

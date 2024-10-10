@@ -11,20 +11,24 @@ API 서비스 키는 공공 데이터포털에서 발급받아햐 합니다.
 **API 출처 : 국세청**  
 
 
+## Download executable file  
+윈도우 64비트 : [buisiness_status_win64](./buisiness_status_win64.zip)  
+
 
 ## Required Libraries
 
 Python >= 3.10.13  
-pandas >= 2.1.0  
 PyQt5 >= 5.15.11  
 jupyterlag_server >= 2.27.3  
 requests  
 pyinstaller >= 6.10.0  
-
+openpyxl >= 3.1.2  
+xlrd >= 2.0.1  
+chardet >= 5.2.0
 
 
 ## Program Build  
 
 ```cmd
-pyinstaller --noconsole ./buisiness_status.py
+pyinstaller --onefile --windowed --exclude-module numpy --exclude-module pandas --exclude-module pyexcel buisiness_status.py
 ```
