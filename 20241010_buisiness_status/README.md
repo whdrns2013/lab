@@ -13,7 +13,8 @@ API 서비스 키는 공공 데이터포털에서 발급받아햐 합니다.
 
 ## Download executable file  
 윈도우 64비트 : [buisiness_status_win64](https://github.com/whdrns2013/lab/releases/download/v1.0.0/buisiness_status_win64.zip)  
-
+arm64 : [buisiness_status_arm64](https://github.com/whdrns2013/lab/releases/download/v1.0.0/buisiness_status_arm64.zip)  
+Unix : [buisiness_status_unix](https://github.com/whdrns2013/lab/releases/download/v1.0.0/buisiness_status_unix.zip)  
 
 ## Required Libraries
 
