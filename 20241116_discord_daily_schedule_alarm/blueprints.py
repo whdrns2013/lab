@@ -9,13 +9,6 @@ class DateReqBody:
                     {
                     'property': property_name,
                     'date': {
-                        'on_or_before': today,
-                        'start':True
-                    }
-                    },
-                    {
-                    'property': property_name,
-                    'date': {
                         'on_or_after': today,
                         'end':True
                     }
