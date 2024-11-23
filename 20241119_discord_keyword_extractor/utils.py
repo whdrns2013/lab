@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 import hashlib
 import configparser
+import pandas as pd
+import copy
 
 # config parser
 config = configparser.ConfigParser()
@@ -41,9 +43,10 @@ def save_nouns_txt(dir_path:str, nouns:List[str]):
 # replace special characters
 def remove_specail_characters(text:str):
     specail_character_list = ['|', '#', '\n', '[', ']']
+    removed_text = copy.deepcopy(text)
     for sc in specail_character_list:
-        text.replace(sc, ' ')
-    return text
+        removed_text = removed_text.replace(sc, ' ')
+    return removed_text
 
 # replace stop words
 def remove_stop_words(text:str):
@@ -53,3 +56,10 @@ def remove_stop_words(text:str):
     for sw in stop_words:
         text.replace(sw, '')
     return text
+
+# [DEBUG] save result of tokenizer
+def save_tokenizer_result(nouns:List[str], file_name:str):
+    save_path = './debug_result/' + file_name + '.csv'
+    df = pd.DataFrame(nouns)
+    df.to_csv(save_path, encoding='utf-8')
+    return 0
