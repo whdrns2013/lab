@@ -24,3 +24,4 @@
 20230210_sesac_final/tools/aws.env
 20230210_sesac_final/yolov7/aws.env
 **/.env
+*.DS_Store
